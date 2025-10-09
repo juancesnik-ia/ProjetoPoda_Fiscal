@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<!-- A tag 'lang' é importante para acessibilidade e para os navegadores entenderem o idioma da página. -->
+<html lang="pt-BR">
+<head>
+    <!-- Configurações essenciais do cabeçalho da página (head) -->
+    <meta charset="UTF-8"> <!-- Define o conjunto de caracteres como UTF-8, que suporta acentos e caracteres especiais. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Garante que a página se adapte bem a telas de diferentes tamanhos, como celulares. -->
+    <title>Protótipo Interativo - Painel do Fiscal</title>
+
+    <!-- Importação do Tailwind CSS: a ferramenta que usamos para estilizar tudo de forma rápida. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Importação da fonte 'Inter' do Google Fonts: para deixar o texto mais bonito e moderno. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos CSS personalizados para detalhes que o Tailwind não cobre ou para organização. -->
+    <style>
+        /* Define a fonte 'Inter' como padrão para todo o corpo da página. */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Um cinza bem claro para o fundo. */
+        }
+        /* Classe para esconder as telas que não estão ativas. O JavaScript controla isso. */
+        .screen {
+            display: none;
+        }
+        /* Estilo para o fundo do modal: O desfoque (backdrop-filter) dá um efeito de profundidade, focando a atenção na janela. */
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+        }
+        /* Classes de estilo para os indicadores de risco, usando as cores do Tailwind. */
+        .risk-high { background-color: #fecaca; color: #b91c1c; } /* Vermelho para risco alto */
+        .risk-medium { background-color: #fed7aa; color: #b45309; } /* Laranja para risco médio */
+        .risk-low { background-color: #d1fae5; color: #065f46; } /* Verde para risco baixo */
+
+        /* Estilo para a notificação (toast). Fica escondida por padrão. */
+        #toast {
+            position: fixed; /* Posição fixa na tela, mesmo com rolagem. */
+            top: 20px; /* Distância do topo. */
+            right: 20px; /* Distância da direita. */
+            transform: translateX(200%); /* Começa fora da tela para a animação de entrada. */
+            transition: transform 0.3s ease-in-out; /* Animação suave. */
+            z-index: 100; /* Garante que fique acima de tudo. */
+        }
+        #toast.show {
+            transform: translateX(0); /* Move a notificação para dentro da tela. */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====================================================================== -->
+    <!-- ESTRUTURA DA TELA DE LOGIN                                             -->
+    <!-- Centralizada na página para foco total do usuário.                      -->
+    <!-- ====================================================================== -->
+    <div id="login-screen" class="screen h-screen flex items-center justify-center">
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 m-4">
+            <div class="flex flex-col items-center mb-6">
+                <div class="bg-green-100 p-3 rounded-full mb-4"><svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></div>
+                <h1 class="text-2xl font-bold text-gray-800">Acesso do Fiscal</h1>
+                <p class="text-gray-500 mt-1">Bem-vindo(a) de volta!</p>
+            </div>
+            
+            <!-- O onsubmit agora chama uma função que simula o carregamento. -->
+            <form id="login-form">
+                <div class="mb-5">
+                    <label for="cpf-login" class="block mb-2 text-sm font-medium text-gray-700">CPF</label>
+                    <input type="text" id="cpf-login" class="cpf-mask bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5" placeholder="000.000.000-00">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block mb-2 text-sm font-medium text-gray-700">Senha</label>
+                    <div class="relative">
+                        <input type="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5 pr-10" placeholder="••••••••">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" aria-label="Mostrar ou esconder a senha">
+                            <svg id="eye-icon" class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            <svg id="eye-slash-icon" class="h-5 w-5 text-gray-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <a href="#" onclick="showScreen('esqueci-senha-screen')" class="text-sm text-green-600 hover:underline mb-6 block text-center">Esqueceu sua senha?</a>
+                <!-- O botão de login agora tem um ID para ser controlado pelo JavaScript. -->
+                <button type="submit" id="login-button" class="w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-3 text-center transition-colors flex justify-center items-center">
+                    Entrar no Painel
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- ESTRUTURA DA TELA DE RECUPERAÇÃO DE SENHA                              -->
+    <!-- ====================================================================== -->
+    <div id="esqueci-senha-screen" class="screen h-screen flex items-center justify-center">
+        <!-- O conteúdo é idêntico ao anterior, pois já estava bem estruturado. -->
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 m-4">
+            <div class="flex flex-col items-center mb-6">
+                <div class="bg-blue-100 p-3 rounded-full mb-4"><svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></div>
+                <h1 class="text-2xl font-bold text-gray-800">Recuperação de Senha</h1>
+                <p class="text-gray-500 mt-1 text-center">Digite seu CPF para iniciarmos o processo de recuperação.</p>
+            </div>
+            <form onsubmit="event.preventDefault(); showToast('Instruções enviadas com sucesso!', 'success'); showScreen('login-screen');">
+                <div class="mb-5">
+                    <label for="cpf-recuperacao" class="block mb-2 text-sm font-medium text-gray-700">CPF</label>
+                    <input type="text" id="cpf-recuperacao" class="cpf-mask bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="000.000.000-00">
+                </div>
+                <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 text-center transition-colors mb-4">
+                    Enviar Instruções
+                </button>
+                <a href="#" onclick="showScreen('login-screen')" class="text-sm text-gray-600 hover:underline block text-center">Lembrou a senha? Voltar para o Login</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- ESTRUTURA DA TELA DO PAINEL DO FISCAL                                  -->
+    <!-- ====================================================================== -->
+    <div id="fiscal-screen" class="screen">
+        <header class="bg-white shadow-md sticky top-0 z-40">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-green-700">Painel de Fiscalização</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="hidden sm:block text-sm">Fiscal: Carlos Mendes</span>
+                    <a href="#" onclick="showScreen('login-screen')" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Sair</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-6 py-8">
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Cards de resumo (estatísticas rápidas). -->
+                <div class="bg-yellow-100 p-6 rounded-lg shadow flex items-center"><div class="bg-yellow-500 p-3 rounded-full text-white mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><div><p class="text-3xl font-bold text-yellow-800">12</p><p class="text-yellow-700 font-semibold">Pendentes de Análise</p></div></div>
+                <div class="bg-green-100 p-6 rounded-lg shadow flex items-center"><div class="bg-green-500 p-3 rounded-full text-white mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><div><p class="text-3xl font-bold text-green-800">47</p><p class="text-green-700 font-semibold">Aprovadas no Mês</p></div></div>
+                <div class="bg-red-100 p-6 rounded-lg shadow flex items-center"><div class="bg-red-500 p-3 rounded-full text-white mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><div><p class="text-3xl font-bold text-red-800">8</p><p class="text-red-700 font-semibold">Rejeitadas no Mês</p></div></div>
+            </section>
+            
+            <div class="bg-white p-4 rounded-lg shadow-md mb-8">
+                <h2 class="text-xl font-semibold mb-4">Solicitações de Poda</h2>
+                <form id="filter-form" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <input type="text" placeholder="Buscar por protocolo ou endereço..." class="col-span-1 md:col-span-2 lg:col-span-2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <select class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"><option value="">Todos os Status</option><option value="pendente">Pendente</option><option value="aprovado">Aprovado</option><option value="rejeitado">Rejeitado</option></select>
+                    <button type="submit" id="filter-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg><span>Filtrar</span></button>
+                </form>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards de solicitações. O efeito 'hover:scale-105' dá um zoom sutil ao passar o mouse. -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300"><div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="text-lg font-bold">#2025001</h3><span class="bg-yellow-400 text-yellow-800 text-xs font-semibold px-2.5 py-1 rounded-full">Pendente</span></div><div class="mb-3"><span class="text-xs font-bold px-2 py-1 rounded-full risk-high">RISCO ALTO</span></div><p class="text-gray-600 mb-1"><span class="font-semibold">Endereço:</span> R. das Flores, 123</p><p class="text-gray-600 mb-4"><span class="font-semibold">Solicitante:</span> Ana Silva</p><p class="text-sm text-gray-500">Data: 09/10/2025</p><button onclick="openModal('2025001')" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Analisar Solicitação</button></div></div>
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300"><div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="text-lg font-bold">#2025004</h3><span class="bg-yellow-400 text-yellow-800 text-xs font-semibold px-2.5 py-1 rounded-full">Pendente</span></div><div class="mb-3"><span class="text-xs font-bold px-2 py-1 rounded-full risk-medium">RISCO MÉDIO</span></div><p class="text-gray-600 mb-1"><span class="font-semibold">Endereço:</span> Av. Bady Bassitt, 4580</p><p class="text-gray-600 mb-4"><span class="font-semibold">Solicitante:</span> João Pereira</p><p class="text-sm text-gray-500">Data: 08/10/2025</p><button onclick="openModal('2025004')" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Analisar Solicitação</button></div></div>
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 opacity-80"><div class="p-6"><div class="flex justify-between items-start mb-2"><h3 class="text-lg font-bold">#2025002</h3><span class="bg-green-400 text-green-800 text-xs font-semibold px-2.5 py-1 rounded-full">Aprovado</span></div><div class="mb-3"><span class="text-xs font-bold px-2 py-1 rounded-full risk-low">RISCO BAIXO</span></div><p class="text-gray-600 mb-1"><span class="font-semibold">Endereço:</span> Av. Principal, 789</p><p class="text-gray-600 mb-4"><span class="font-semibold">Solicitante:</span> Bruno Costa</p><p class="text-sm text-gray-500">Data: 07/10/2025</p><button class="mt-4 w-full bg-gray-300 text-gray-500 font-bold py-2 px-4 rounded-lg cursor-not-allowed">Ver Detalhes</button></div></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- JANELA MODAL DE ANÁLISE (APRIMORADA)                                   -->
+    <!-- Fica por cima de todo o conteúdo quando ativada.                       -->
+    <!-- ====================================================================== -->
+    <div id="requestModal" onclick="if (event.target.id === 'requestModal') closeModal()" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-backdrop p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full md:max-w-3xl flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+                <h2 class="text-xl font-bold">Análise da Solicitação - #<span id="modalProtocol"></span></h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl font-bold" aria-label="Fechar janela">&times;</button>
+            </div>
+            <div class="p-6 flex-grow overflow-y-auto">
+                <!-- Conteúdo interno do modal. Já estava bem estruturado. -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <div class="mb-6"><h4 class="font-semibold text-gray-700">Endereço</h4><p>Rua das Flores, 123, Jd. das Palmeiras, São José do Rio Preto - SP</p></div>
+                        <div class="mb-6"><h4 class="font-semibold text-gray-700">Solicitante</h4><p>Ana Silva - (17) 99999-8888</p></div>
+                        <div class="mb-6"><h4 class="font-semibold text-gray-700">Motivo</h4><p>Galhos tocando a fiação elétrica e risco de queda sobre a calçada.</p></div>
+                        <div class="mb-6"><h4 class="font-semibold text-gray-700 mb-2">Foto da Árvore</h4><img src="https://placehold.co/600x400/a0aec0/ffffff?text=Foto+da+Árvore" alt="Foto da Árvore" class="object-cover w-full h-auto rounded-lg"></div>
+                        <div><h4 class="font-semibold text-gray-700 mb-2">Localização</h4><div class="bg-gray-200 rounded-lg w-full h-48 flex items-center justify-center text-gray-500">[IMAGEM DO MAPA]</div></div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg mb-4">Checklist de Vistoria</h3>
+                        <div class="space-y-3"><label class="flex items-center"><input type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mr-2">Risco iminente de queda?</label><label class="flex items-center"><input type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mr-2">Afeta fiação elétrica?</label><label class="flex items-center"><input type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mr-2">Compromete calçada/trânsito?</label><label class="flex items-center"><input type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mr-2">Árvore aparenta estar saudável?</label><label class="flex items-center"><input type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mr-2">Presença de pragas (cupins, etc)?</label></div><hr class="my-6">
+                        <div><h4 class="font-semibold text-gray-700 mb-2">Parecer Técnico (Obrigatório)</h4><textarea id="fiscalNotes" rows="6" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Descreva sua avaliação técnica..."></textarea></div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 flex-shrink-0">
+                <button onclick="closeModal()" class="w-full sm:w-auto bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="closeModalWithMessage('Solicitação Rejeitada com sucesso!', 'error')" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Rejeitar</button>
+                <button onclick="closeModalWithMessage('Solicitação Aprovada com sucesso!', 'success')" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Aprovar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- ELEMENTO DA NOTIFICAÇÃO (TOAST)                                        -->
+    <!-- Fica aqui no final do body, mas é posicionado na tela via CSS.         -->
+    <!-- ====================================================================== -->
+    <div id="toast" class="p-4 rounded-lg text-white shadow-lg">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- SCRIPT JAVASCRIPT GERAL                                                -->
+    <!-- Todo o cérebro da nossa página interativa fica aqui.                   -->
+    <!-- ====================================================================== -->
+    <script>
+        // --- 1. LÓGICA DE NAVEGAÇÃO ENTRE TELAS ---
+        // Pega todos os elementos que têm a classe 'screen' e guarda numa lista.
+        const screens = document.querySelectorAll('.screen');
+        // Função para mostrar uma tela específica e esconder as outras.
+        function showScreen(screenId) {
+            screens.forEach(screen => {
+                screen.style.display = 'none'; // Esconde todas.
+            });
+            const activeScreen = document.getElementById(screenId); // Pega a tela que queremos mostrar.
+            if (activeScreen) {
+                // Telas de login e recuperação são centralizadas com flexbox, o painel principal não.
+                activeScreen.style.display = (screenId === 'login-screen' || screenId === 'esqueci-senha-screen') ? 'flex' : 'block';
+            }
+        }
+
+        // --- 2. LÓGICA DO MODAL (JANELA DE ANÁLISE) ---
+        const modal = document.getElementById('requestModal');
+        const modalProtocol = document.getElementById('modalProtocol');
+        function openModal(protocol) {
+            modalProtocol.textContent = protocol; // Coloca o número do protocolo no título.
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden'); // Trava a rolagem da página de fundo.
+        }
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.classList.remove('overflow-hidden'); // Libera a rolagem.
+        }
+        function closeModalWithMessage(message, type) {
+            closeModal();
+            showToast(message, type); // Em vez de alert(), chama nossa nova função de notificação.
+        }
+
+        // --- 3. LÓGICA DA NOTIFICAÇÃO (TOAST) ---
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        function showToast(message, type = 'success') {
+            toastMessage.textContent = message; // Define a mensagem.
+            // Remove classes de cor antigas e adiciona a nova.
+            toast.classList.remove('bg-green-500', 'bg-red-500');
+            toast.classList.add(type === 'success' ? 'bg-green-500' : 'bg-red-500');
+            
+            toast.classList.add('show'); // Mostra a notificação.
+            // Depois de 3 segundos, esconde a notificação novamente.
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- 4. LÓGICAS DE FORMULÁRIO E INTERAÇÃO ---
+        // Função para simular carregamento em botões
+        function simulateLoading(button, originalContent, duration = 1500) {
+            // Desabilita o botão e mostra o ícone de carregamento.
+            button.disabled = true;
+            button.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="4" stroke="currentColor" class="opacity-25"></circle><path d="M4 12a8 8 0 018-8" stroke-width="4" stroke="currentColor" class="opacity-75"></path></svg> Carregando...`;
+            
+            // Depois do tempo definido, reverte o botão ao estado original.
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }, duration);
+        }
+
+        // Simulação de login
+        const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-button');
+        const originalLoginButtonContent = loginButton.innerHTML;
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Impede o recarregamento da página.
+            simulateLoading(loginButton, originalLoginButtonContent, 1500);
+            setTimeout(() => showScreen('fiscal-screen'), 1500); // Mostra o painel após o "loading".
+        });
+
+        // Simulação de filtro
+        const filterForm = document.getElementById('filter-form');
+        const filterButton = document.getElementById('filter-button');
+        const originalFilterButtonContent = filterButton.innerHTML;
+        filterForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            simulateLoading(filterButton, originalFilterButtonContent, 1000);
+            setTimeout(() => showToast('Filtros aplicados!', 'success'), 1000);
+        });
+
+        // Visibilidade da senha
+        const togglePasswordButton = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        togglePasswordButton.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            document.getElementById('eye-icon').classList.toggle('hidden');
+            document.getElementById('eye-slash-icon').classList.toggle('hidden');
+        });
+
+        // Máscara de CPF
+        document.querySelectorAll('.cpf-mask').forEach(input => {
+            input.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não for dígito.
+                // Aplica a formatação do CPF: 000.000.000-00
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            });
+        });
+
+        // --- 5. INICIALIZAÇÃO ---
+        // Garante que a tela de login seja a primeira a ser exibida quando a página carregar.
+        document.addEventListener('DOMContentLoaded', () => {
+            showScreen('login-screen');
+        });
+    </script>
+</body>
+</html>
+
